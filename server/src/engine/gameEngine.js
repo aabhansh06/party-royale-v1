@@ -33,9 +33,10 @@ export function openQuestion(room, now=Date.now()) {
   room.players.forEach(p=>{p.pendingAnswer=null;p.answerAt=null;p.doubleNext=false;p.personalDeadline=room.deadline;p.fiftyFifty=[];p.powerupUsedThisQuestion=false;});
   return room.currentQuestion;
 }
-export function activatePowerup(room, playerId, type, targetId) {
+export function activatePowerup(room, playerId, type, targetId, now = Date.now()) {
   const p=room.players.find(x=>x.id===playerId); if(!p) throw new Error('Player not found');
   if(room.status!=='PLAYING'||!room.currentQuestion) throw new Error('No active question');
+  if(now > (p.personalDeadline ?? room.deadline)) throw new Error('Question time has expired');
   if(p.pendingAnswer!==null) throw new Error('Power-ups must be used before answering');
   if(p.powerupUsedThisQuestion) throw new Error('Only one power-up can be used per question');
   if(!p.powerups.includes(type)||p.usedPowerups.includes(type)) throw new Error('Power-up unavailable');
@@ -84,5 +85,5 @@ export function resolveQuestion(room, now=Date.now()) {
 export function finalResults(room) {
   const ranked=[...room.players].sort((a,b)=>b.score-a.score||b.correct-a.correct||a.totalAnswerTime-b.totalAnswerTime);
   const winner=ranked[0]; const tied=ranked.filter(p=>p.score===winner?.score&&p.correct===winner?.correct&&(p.totalAnswerTime??0)===(winner?.totalAnswerTime??0));
-  return {rankings:ranked.map((p,i)=>({rank:i+1,id:p.id,nickname:p.nickname,score:p.score,correct:p.correct})),winners:tied.map(p=>p.id)};
+  return {rankings:ranked.map((p,i)=>({rank:i+1,id:p.id,nickname:p.nickname,avatar:p.avatar,score:p.score,correct:p.correct})),winners:tied.map(p=>p.id)};
 }
